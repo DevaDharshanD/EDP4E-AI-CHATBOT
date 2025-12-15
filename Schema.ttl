@@ -1,0 +1,404 @@
+@prefix:<http://edp4e.org#> .
+@prefix bp: <http://edp4e.org#> .
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+
+<http://edp4e.org#> rdf:type owl:Ontology .
+
+:Submodel rdf:type owl:Class .
+
+:SubmodelElement rdf:type owl:Class .
+
+:Property rdf:type owl:Class ; rdfs:subClassOf :SubmodelElement .
+
+:SpecificAssetId rdf:type owl:Class .
+
+:hasX_3DX rdf:type owl:ObjectProperty ; rdfs:domain :AssetAdministrationShell ; rdfs:range :X_3DX ; rdfs:subPropertyOf :hasSubmodel .
+
+:hasBDS rdf:type owl:ObjectProperty ; rdfs:domain :AssetAdministrationShell ; rdfs:range :BDS ; rdfs:subPropertyOf :hasSubmodel .
+
+:hasXRAY rdf:type owl:ObjectProperty ; rdfs:domain :AssetAdministrationShell ; rdfs:range :XRAY ; rdfs:subPropertyOf :hasSubmodel .
+
+:hasSP rdf:type owl:ObjectProperty ; rdfs:domain :AssetAdministrationShell ; rdfs:range :SP ; rdfs:subPropertyOf :hasSubmodel .
+
+:hasVCDP rdf:type owl:ObjectProperty ; rdfs:domain :AssetAdministrationShell ; rdfs:range :VCDP ; rdfs:subPropertyOf :hasSubmodel .
+
+:hasMFG rdf:type owl:ObjectProperty ; rdfs:domain :AssetAdministrationShell ; rdfs:range :MFG ; rdfs:subPropertyOf :hasSubmodel .
+
+:hasCRM rdf:type owl:ObjectProperty ; rdfs:domain :AssetAdministrationShell ; rdfs:range :CRM ; rdfs:subPropertyOf :hasSubmodel .
+
+:AssetInformation rdf:type owl:Class .
+
+:globalAssetId rdf:type owl:DatatypeProperty ; rdfs:domain :AssetInformation ; rdfs:range xsd:string .
+
+:hasAssetInformation rdf:type owl:ObjectProperty ; rdfs:domain :AssetAdministrationShell ; rdfs:range :AssetInformation .
+
+:hasSubmodel rdf:type owl:ObjectProperty ;
+  owl:inverseOf :isSubmodelOf .
+:isSubmodelOf rdf:type owl:ObjectProperty ;
+  rdfs:domain :Submodel ; rdfs:range :AssetAdministrationShell .
+:hasSubmodelElement rdf:type owl:ObjectProperty ;
+  rdfs:domain :Submodel ; rdfs:range :SubmodelElement ;
+  owl:inverseOf :isSubmodelElementOf .
+:isSubmodelElementOf rdf:type owl:ObjectProperty ;
+  rdfs:domain :SubmodelElement ; rdfs:range :Submodel .
+
+:X_3DX rdf:type owl:Class ; rdfs:subClassOf :Submodel .
+
+:VehicleIdentificationNumber rdf:type owl:DatatypeProperty ; rdfs:domain :X_3DX ; rdfs:range xsd:string .
+
+:VehicleProgramName rdf:type owl:DatatypeProperty ; rdfs:domain :X_3DX ; rdfs:range xsd:string .
+
+:BatteryCategory rdf:type owl:DatatypeProperty ; rdfs:domain :X_3DX ; rdfs:range xsd:string .
+
+:BatteryMass rdf:type owl:DatatypeProperty ; rdfs:domain :X_3DX ; rdfs:range xsd:integer .
+
+:BatteryChemistry rdf:type owl:DatatypeProperty ; rdfs:domain :X_3DX ; rdfs:range xsd:string .
+
+:ComponentPartNumbers rdf:type owl:DatatypeProperty ; rdfs:domain :X_3DX ; rdfs:range xsd:string .
+
+:Source rdf:type owl:DatatypeProperty ; rdfs:domain :X_3DX ; rdfs:range xsd:string .
+
+:BDS rdf:type owl:Class ; rdfs:subClassOf :Submodel .
+
+:VehicleIdentificationNumber rdf:type owl:DatatypeProperty ; rdfs:domain :BDS ; rdfs:range xsd:string .
+
+:VehicleProgramName rdf:type owl:DatatypeProperty ; rdfs:domain :BDS ; rdfs:range xsd:string .
+
+:BatteryMass rdf:type owl:DatatypeProperty ; rdfs:domain :BDS ; rdfs:range xsd:integer .
+
+:BatteryChemistry rdf:type owl:DatatypeProperty ; rdfs:domain :BDS ; rdfs:range xsd:string .
+
+:CriticalRawMaterials rdf:type owl:DatatypeProperty ; rdfs:domain :BDS ; rdfs:range xsd:string .
+
+:MaterialsCathode rdf:type owl:DatatypeProperty ; rdfs:domain :BDS ; rdfs:range xsd:string .
+
+:MaterialsAnode rdf:type owl:DatatypeProperty ; rdfs:domain :BDS ; rdfs:range xsd:string .
+
+:MaterialsElectrolyte rdf:type owl:DatatypeProperty ; rdfs:domain :BDS ; rdfs:range xsd:string .
+
+:HazardousSubstances rdf:type owl:DatatypeProperty ; rdfs:domain :BDS ; rdfs:range xsd:string .
+
+:SafetyMeasures rdf:type owl:DatatypeProperty ; rdfs:domain :BDS ; rdfs:range xsd:string .
+
+:CertifiedUsableBatteryEnergy rdf:type owl:DatatypeProperty ; rdfs:domain :BDS ; rdfs:range xsd:integer .
+
+:MinimumVoltage rdf:type owl:DatatypeProperty ; rdfs:domain :BDS ; rdfs:range xsd:integer .
+
+:MaximumVoltage rdf:type owl:DatatypeProperty ; rdfs:domain :BDS ; rdfs:range xsd:integer .
+
+:NominalVoltage rdf:type owl:DatatypeProperty ; rdfs:domain :BDS ; rdfs:range xsd:integer .
+
+:OriginalPowerCapability rdf:type owl:DatatypeProperty ; rdfs:domain :BDS ; rdfs:range xsd:integer .
+
+:PowerFade rdf:type owl:DatatypeProperty ; rdfs:domain :BDS ; rdfs:range xsd:integer .
+
+:MaximumPermittedBatteryPower rdf:type owl:DatatypeProperty ; rdfs:domain :BDS ; rdfs:range xsd:integer .
+
+:NominalPowerToEnergyRatio rdf:type owl:DatatypeProperty ; rdfs:domain :BDS ; rdfs:range xsd:integer .
+
+:InitialRoundTripEnergyEfficiency rdf:type owl:DatatypeProperty ; rdfs:domain :BDS ; rdfs:range xsd:integer .
+
+:RoundTripEfficiencyAtHalfCycleLife rdf:type owl:DatatypeProperty ; rdfs:domain :BDS ; rdfs:range xsd:integer .
+
+:EnergyEfficiencyFade rdf:type owl:DatatypeProperty ; rdfs:domain :BDS ; rdfs:range xsd:integer .
+
+:ExpectedLifetimeYears rdf:type owl:DatatypeProperty ; rdfs:domain :BDS ; rdfs:range xsd:integer .
+
+:TemperatureRangeIdleStateLowerBoundary rdf:type owl:DatatypeProperty ; rdfs:domain :BDS ; rdfs:range xsd:integer .
+
+:TemperatureRangeIdleStateUpperBoundary rdf:type owl:DatatypeProperty ; rdfs:domain :BDS ; rdfs:range xsd:integer .
+
+:Source rdf:type owl:DatatypeProperty ; rdfs:domain :BDS ; rdfs:range xsd:string .
+
+:XRAY rdf:type owl:Class ; rdfs:subClassOf :Submodel .
+
+:TestReportComplianceResults rdf:type owl:DatatypeProperty ; rdfs:domain :XRAY ; rdfs:range xsd:string .
+
+:Source rdf:type owl:DatatypeProperty ; rdfs:domain :XRAY ; rdfs:range xsd:string .
+
+:SP rdf:type owl:Class ; rdfs:subClassOf :Submodel .
+
+:CarbonFootprintLabel rdf:type owl:DatatypeProperty ; rdfs:domain :SP ; rdfs:range xsd:string .
+
+:ExtinguishingAgent rdf:type owl:DatatypeProperty ; rdfs:domain :SP ; rdfs:range xsd:string .
+
+:EuDeclarationOfConformity rdf:type owl:DatatypeProperty ; rdfs:domain :SP ; rdfs:range xsd:string .
+
+:CarbonFootprintPerformanceClass rdf:type owl:DatatypeProperty ; rdfs:domain :SP ; rdfs:range xsd:string .
+
+:CarbonFootprintStudyUrl rdf:type owl:DatatypeProperty ; rdfs:domain :SP ; rdfs:range xsd:string .
+
+:AbsoluteBatteryCarbonFootprint rdf:type owl:DatatypeProperty ; rdfs:domain :SP ; rdfs:range xsd:integer .
+
+:ImpactOnEnvironmentHumanHealthSafety rdf:type owl:DatatypeProperty ; rdfs:domain :SP ; rdfs:range xsd:string .
+
+:BatteryCollectionAndSecondLifeInformation rdf:type owl:DatatypeProperty ; rdfs:domain :SP ; rdfs:range xsd:string .
+
+:RatedCapacity rdf:type owl:DatatypeProperty ; rdfs:domain :SP ; rdfs:range xsd:integer .
+
+:Source rdf:type owl:DatatypeProperty ; rdfs:domain :SP ; rdfs:range xsd:string .
+
+:VCDP rdf:type owl:Class ; rdfs:subClassOf :Submodel .
+
+:BatteryStatus rdf:type owl:DatatypeProperty ; rdfs:domain :VCDP ; rdfs:range xsd:string .
+
+:RemainingCapacity rdf:type owl:DatatypeProperty ; rdfs:domain :VCDP ; rdfs:range xsd:integer .
+
+:CapacityFade rdf:type owl:DatatypeProperty ; rdfs:domain :VCDP ; rdfs:range xsd:integer .
+
+:RemainingUsableBatteryEnergy rdf:type owl:DatatypeProperty ; rdfs:domain :VCDP ; rdfs:range xsd:integer .
+
+:StateOfCharge rdf:type owl:DatatypeProperty ; rdfs:domain :VCDP ; rdfs:range xsd:integer .
+
+:RemainingPowerCapability rdf:type owl:DatatypeProperty ; rdfs:domain :VCDP ; rdfs:range xsd:integer .
+
+:NominalPowerToEnergyRatio rdf:type owl:DatatypeProperty ; rdfs:domain :VCDP ; rdfs:range xsd:integer .
+
+:RemainingRoundTripEnergyEfficiency rdf:type owl:DatatypeProperty ; rdfs:domain :VCDP ; rdfs:range xsd:integer .
+
+:ExpectedLifetimeCycles rdf:type owl:DatatypeProperty ; rdfs:domain :VCDP ; rdfs:range xsd:integer .
+
+:FullChargeDischargeCycles rdf:type owl:DatatypeProperty ; rdfs:domain :VCDP ; rdfs:range xsd:integer .
+
+:EnergyThroughput rdf:type owl:DatatypeProperty ; rdfs:domain :VCDP ; rdfs:range xsd:integer .
+
+:CapacityThroughput rdf:type owl:DatatypeProperty ; rdfs:domain :VCDP ; rdfs:range xsd:integer .
+
+:TemperatureInformation rdf:type owl:DatatypeProperty ; rdfs:domain :VCDP ; rdfs:range xsd:integer .
+
+:TimeInExtremeTemperaturesAboveBoundary rdf:type owl:DatatypeProperty ; rdfs:domain :VCDP ; rdfs:range xsd:integer .
+
+:TimeInExtremeTemperaturesBelowBoundary rdf:type owl:DatatypeProperty ; rdfs:domain :VCDP ; rdfs:range xsd:integer .
+
+:TimeChargingInExtremeTemperaturesAboveBoundary rdf:type owl:DatatypeProperty ; rdfs:domain :VCDP ; rdfs:range xsd:integer .
+
+:TimeChargingInExtremeTemperaturesBelowBoundary rdf:type owl:DatatypeProperty ; rdfs:domain :VCDP ; rdfs:range xsd:integer .
+
+:DeepDischargeEvents rdf:type owl:DatatypeProperty ; rdfs:domain :VCDP ; rdfs:range xsd:integer .
+
+:OverchargeEvents rdf:type owl:DatatypeProperty ; rdfs:domain :VCDP ; rdfs:range xsd:integer .
+
+:RecordHistoryDate rdf:type owl:DatatypeProperty ; rdfs:domain :VCDP ; rdfs:range xsd:dateTime .
+
+:Source rdf:type owl:DatatypeProperty ; rdfs:domain :VCDP ; rdfs:range xsd:string .
+
+:MFG rdf:type owl:Class ; rdfs:subClassOf :Submodel .
+
+:BatteryIdentifier rdf:type owl:DatatypeProperty ; rdfs:domain :MFG ; rdfs:range xsd:string .
+
+:OperatorIdentifierAndInformation rdf:type owl:DatatypeProperty ; rdfs:domain :MFG ; rdfs:range xsd:string .
+
+:ManufacturerIdentifierAndInformation rdf:type owl:DatatypeProperty ; rdfs:domain :MFG ; rdfs:range xsd:string .
+
+:ManufacturingPlace rdf:type owl:DatatypeProperty ; rdfs:domain :MFG ; rdfs:range xsd:string .
+
+:ManufacturingDate rdf:type owl:DatatypeProperty ; rdfs:domain :MFG ; rdfs:range xsd:date .
+
+:GeneralBatteryAndManufacturerInformation rdf:type owl:DatatypeProperty ; rdfs:domain :MFG ; rdfs:range xsd:string .
+
+:VehicleMfgDate rdf:type owl:DatatypeProperty ; rdfs:domain :MFG ; rdfs:range xsd:date .
+
+:Source rdf:type owl:DatatypeProperty ; rdfs:domain :MFG ; rdfs:range xsd:string .
+
+:CRM rdf:type owl:Class ; rdfs:subClassOf :Submodel .
+
+:DateOfBatteryDelivery rdf:type owl:DatatypeProperty ; rdfs:domain :CRM ; rdfs:range xsd:date .
+
+:WarrantyPeriodOfBattery rdf:type owl:DatatypeProperty ; rdfs:domain :CRM ; rdfs:range xsd:integer .
+
+:DismantlingInformationManuals rdf:type owl:DatatypeProperty ; rdfs:domain :CRM ; rdfs:range xsd:string .
+
+:SparePartsInformation rdf:type owl:DatatypeProperty ; rdfs:domain :CRM ; rdfs:range xsd:string .
+
+:AccidentInformation rdf:type owl:DatatypeProperty ; rdfs:domain :CRM ; rdfs:range xsd:string .
+
+:Source rdf:type owl:DatatypeProperty ; rdfs:domain :CRM ; rdfs:range xsd:string .
+
+:AssetAdministrationShell rdf:type owl:Class ;
+                            rdfs:subClassOf [ rdf:type owl:Restriction ;
+      owl:onProperty :hasAssetInformation ;
+      owl:qualifiedCardinality "1"^^xsd:nonNegativeInteger ;
+      owl:onClass :AssetInformation
+    ],
+                                            [ rdf:type owl:Restriction ;
+      owl:onProperty :hasX_3DX ;
+      owl:qualifiedCardinality "1"^^xsd:nonNegativeInteger ;
+      owl:onClass :X_3DX
+    ],
+                                            [ rdf:type owl:Restriction ;
+      owl:onProperty :hasBDS ;
+      owl:qualifiedCardinality "1"^^xsd:nonNegativeInteger ;
+      owl:onClass :BDS
+    ],
+                                            [ rdf:type owl:Restriction ;
+      owl:onProperty :hasXRAY ;
+      owl:qualifiedCardinality "1"^^xsd:nonNegativeInteger ;
+      owl:onClass :XRAY
+    ],
+                                            [ rdf:type owl:Restriction ;
+      owl:onProperty :hasSP ;
+      owl:qualifiedCardinality "1"^^xsd:nonNegativeInteger ;
+      owl:onClass :SP
+    ],
+                                            [ rdf:type owl:Restriction ;
+      owl:onProperty :hasVCDP ;
+      owl:minQualifiedCardinality "0"^^xsd:nonNegativeInteger ;
+      owl:onClass :VCDP
+    ],
+                                            [ rdf:type owl:Restriction ;
+      owl:onProperty :hasMFG ;
+      owl:qualifiedCardinality "1"^^xsd:nonNegativeInteger ;
+      owl:onClass :MFG
+    ],
+                                            [ rdf:type owl:Restriction ;
+      owl:onProperty :hasCRM ;
+      owl:minQualifiedCardinality "1"^^xsd:nonNegativeInteger ;
+      owl:onClass :CRM
+    ] .
+
+:id rdf:type owl:DatatypeProperty , owl:FunctionalProperty ;
+  rdfs:domain [ rdf:type owl:Class ; owl:unionOf ( :AssetAdministrationShell :Submodel ) ] ;
+  rdfs:range xsd:string .
+:idShort rdf:type owl:DatatypeProperty ;
+  rdfs:domain [ rdf:type owl:Class ; owl:unionOf ( :AssetAdministrationShell :Property :Submodel ) ] ;
+  rdfs:range xsd:string .
+:name rdf:type owl:DatatypeProperty ; rdfs:domain :SpecificAssetId ; rdfs:range xsd:string .
+:value rdf:type owl:DatatypeProperty ;
+  rdfs:domain [ rdf:type owl:Class ; owl:unionOf ( :Property :SpecificAssetId ) ] ;
+  rdfs:range rdfs:Literal .
+:valueType rdf:type owl:DatatypeProperty ; rdfs:domain :SpecificAssetId ; rdfs:range xsd:string .
+:globalAssetId rdf:type owl:DatatypeProperty , owl:FunctionalProperty ;
+  rdfs:domain :AssetInformation ; rdfs:range xsd:string .
+
+:classifies rdf:type owl:ObjectProperty ; rdfs:domain :Property ; rdfs:range :Property .
+
+# Enrichment: BatteryCategory classifies BatteryChemistry
+
+:defines rdf:type owl:ObjectProperty ; rdfs:domain :Property ; rdfs:range :Property .
+
+# Enrichment: BatteryMass defines BatteryCategory
+
+:references rdf:type owl:ObjectProperty ; rdfs:domain :Property ; rdfs:range :Property .
+
+# Enrichment: ComponentPartNumbers references BatteryCategory
+
+:determines rdf:type owl:ObjectProperty ; rdfs:domain :Property ; rdfs:range :Property .
+
+# Enrichment: BatteryChemistry determines CriticalRawMaterials
+
+:composedOf rdf:type owl:ObjectProperty ; rdfs:domain :Property ; rdfs:range :Property .
+
+# Enrichment: MaterialsCathode composedOf CriticalRawMaterials
+
+# Enrichment: MaterialsAnode composedOf CriticalRawMaterials
+
+# Enrichment: MaterialsElectrolyte composedOf CriticalRawMaterials
+
+:requires rdf:type owl:ObjectProperty ; rdfs:domain :Property ; rdfs:range :Property .
+
+# Enrichment: HazardousSubstances requires SafetyMeasures
+
+:derivedFrom rdf:type owl:ObjectProperty ; rdfs:domain :Property ; rdfs:range :Property .
+
+# Enrichment: CertifiedUsableBatteryEnergy derivedFrom NominalVoltage
+
+:definesUpperBound rdf:type owl:ObjectProperty ; rdfs:domain :Property ; rdfs:range :Property .
+
+# Enrichment: MaximumVoltage definesUpperBound NominalVoltage
+
+:definesLowerBound rdf:type owl:ObjectProperty ; rdfs:domain :Property ; rdfs:range :Property .
+
+# Enrichment: MinimumVoltage definesLowerBound NominalVoltage
+
+:influences rdf:type owl:ObjectProperty ; rdfs:domain :Property ; rdfs:range :Property .
+
+# Enrichment: PowerFade influences MaximumPermittedBatteryPower
+
+# Enrichment: RoundTripEfficiencyAtHalfCycleLife derivedFrom InitialRoundTripEnergyEfficiency
+
+# Enrichment: EnergyEfficiencyFade influences ExpectedLifetimeYears
+
+# Enrichment: TemperatureRangeIdleStateLowerBoundary definesLowerBound TemperatureRangeIdleStateUpperBoundary
+
+:validates rdf:type owl:ObjectProperty ; rdfs:domain :Property ; rdfs:range :Property .
+
+# Enrichment: TestReportComplianceResults validates BatteryCategory
+
+# Enrichment: CarbonFootprintLabel classifies AbsoluteBatteryCarbonFootprint
+
+# Enrichment: CarbonFootprintPerformanceClass derivedFrom CarbonFootprintStudyUrl
+
+:certifies rdf:type owl:ObjectProperty ; rdfs:domain :Property ; rdfs:range :Property .
+
+# Enrichment: EuDeclarationOfConformity certifies BatteryCategory
+
+:mitigates rdf:type owl:ObjectProperty ; rdfs:domain :Property ; rdfs:range :Property .
+
+# Enrichment: ExtinguishingAgent mitigates ImpactOnEnvironmentHumanHealthSafety
+
+# Enrichment: RatedCapacity defines BatteryCategory
+
+# Enrichment: RemainingCapacity derivedFrom CapacityFade
+
+# Enrichment: RemainingUsableBatteryEnergy derivedFrom RemainingCapacity
+
+:affects rdf:type owl:ObjectProperty ; rdfs:domain :Property ; rdfs:range :Property .
+
+# Enrichment: StateOfCharge affects RemainingPowerCapability
+
+# Enrichment: NominalPowerToEnergyRatio derivedFrom RemainingUsableBatteryEnergy
+
+# Enrichment: RemainingRoundTripEnergyEfficiency derivedFrom InitialRoundTripEnergyEfficiency
+
+:influencedBy rdf:type owl:ObjectProperty ; rdfs:domain :Property ; rdfs:range :Property .
+
+# Enrichment: ExpectedLifetimeCycles influencedBy FullChargeDischargeCycles
+
+:aggregates rdf:type owl:ObjectProperty ; rdfs:domain :Property ; rdfs:range :Property .
+
+# Enrichment: EnergyThroughput aggregates CapacityThroughput
+
+# Enrichment: TemperatureInformation influences StateOfCharge
+
+# Enrichment: TimeInExtremeTemperaturesAboveBoundary influences CapacityFade
+
+# Enrichment: TimeChargingInExtremeTemperaturesBelowBoundary influences EnergyEfficiencyFade
+
+:reduces rdf:type owl:ObjectProperty ; rdfs:domain :Property ; rdfs:range :Property .
+
+# Enrichment: DeepDischargeEvents reduces ExpectedLifetimeCycles
+
+# Enrichment: OverchargeEvents reduces ExpectedLifetimeCycles
+
+:occurredOn rdf:type owl:ObjectProperty ; rdfs:domain :Property ; rdfs:range :Property .
+
+# Enrichment: RecordHistoryDate occurredOn VCDP
+
+:definesLifecycleStart rdf:type owl:ObjectProperty ; rdfs:domain :Property ; rdfs:range :Property .
+
+# Enrichment: ManufacturingDate definesLifecycleStart BatteryIdentifier
+
+:manufacturedBy rdf:type owl:ObjectProperty ; rdfs:domain :Property ; rdfs:range :Property .
+
+# Enrichment: ManufacturerIdentifierAndInformation manufacturedBy BatteryIdentifier
+
+:locatedAt rdf:type owl:ObjectProperty ; rdfs:domain :Property ; rdfs:range :Property .
+
+# Enrichment: ManufacturingPlace locatedAt ManufacturerIdentifierAndInformation
+
+# Enrichment: VehicleMfgDate definesLifecycleStart VehicleProgramName
+
+# Enrichment: DateOfBatteryDelivery definesLifecycleStart BatteryIdentifier
+
+:definesWarranty rdf:type owl:ObjectProperty ; rdfs:domain :Property ; rdfs:range :Property .
+
+# Enrichment: WarrantyPeriodOfBattery definesWarranty BatteryIdentifier
+
+:guides rdf:type owl:ObjectProperty ; rdfs:domain :Property ; rdfs:range :Property .
+
+# Enrichment: DismantlingInformationManuals guides SparePartsInformation
+
+# Enrichment: AccidentInformation influences WarrantyPeriodOfBattery

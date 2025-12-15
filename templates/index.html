@@ -1,0 +1,248 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>EDP4E Chatbot</title>
+  
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;700;900&display=swap" rel="stylesheet">
+  
+  <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body>
+  <div class="container">
+    <h1>EDP4E Chatbot - Knowledge Graph Query Assistant</h1>
+
+    <div id="chatbot-interface">
+        </div>
+
+    <form id="form">
+      <textarea id="question" name="question" placeholder="Ask your question about vehicle component data..."></textarea>
+      <button type="submit">Send Query</button>
+    </form>
+
+    <div class="technical-details">
+        <h3>Technical Details</h3>
+        <div class="result-container">
+            
+            <div class="result-col">
+                <div class="code-header">
+                    <h4>Generated SPARQL</h4>
+                    <button type="button" class="copy-btn" onclick="copyCode('sparql', this)">Copy</button>
+                </div>
+                <pre id="sparql">Awaiting query...</pre>
+            </div>
+            
+            <div class="result-col">
+                <div class="code-header">
+                    <h4>Fuseki Results (JSON)</h4>
+                    <button type="button" class="copy-btn" onclick="copyCode('results', this)">Copy</button>
+                </div>
+                <pre id="results">Query results will appear here...</pre>
+            </div>
+        </div>
+    </div>
+  </div>
+
+<script>
+// =========================================================
+// JAVASCRIPT FUNCTIONS AND EVENT LISTENERS
+// =========================================================
+
+const SPARQL_DEFAULT_TEXT = 'Awaiting query...';
+const RESULTS_DEFAULT_TEXT = 'Query results will appear here...';
+const textarea = document.getElementById('question');
+const defaultHeight = 45; 
+
+// --- Placeholder HTML for Waving Dots ---
+const LOADER_HTML = `
+    <div class="loader-dots">
+        <span></span>
+        <span></span>
+        <span></span>
+    </div>
+`;
+const PRE_PLACEHOLDER_HTML = `
+    <div class="pre-placeholder">
+        ${LOADER_HTML}
+    </div>
+`;
+
+// --- 1. Copy to Clipboard Functionality ---
+function copyCode(elementId, buttonElement) {
+    const codeElement = document.getElementById(elementId);
+    let textToCopy = codeElement.textContent;
+    
+    // Check if copying from an error bubble
+    if (elementId.startsWith('error-text-')) {
+        // Retrieve the stored raw error text
+        textToCopy = codeElement.getAttribute('data-raw-text').trim(); 
+    }
+
+    navigator.clipboard.writeText(textToCopy)
+        .then(() => {
+            const originalText = buttonElement.textContent;
+            buttonElement.textContent = 'Copied!';
+            
+            setTimeout(() => {
+                buttonElement.textContent = originalText;
+            }, 1500);
+        })
+        .catch(err => {
+            console.error('Could not copy text: ', err);
+            alert('Failed to copy to clipboard.');
+        });
+}
+
+// --- 2. Dynamic Textarea Height (Simplified and Hardened) ---
+textarea.addEventListener('input', () => {
+    // 1. Reset height to auto to calculate true scrollHeight
+    textarea.style.height = 'auto';
+    
+    // 2. Only expand if scrollHeight is actually greater than the minimum height
+    if (textarea.scrollHeight > defaultHeight) { 
+        let newHeight = Math.min(textarea.scrollHeight, 200); 
+        textarea.style.height = newHeight + 'px';
+    } else {
+        // Enforce default height if content fits on one line
+        textarea.style.height = defaultHeight + 'px';
+    }
+});
+
+
+// --- 3. Chat Message Handling ---
+let errorIdCounter = 0; 
+
+// Helper function to create a chat bubble
+function addMessage(text, sender, isError = false, rawText = null) {
+    const chatInterface = document.getElementById('chatbot-interface');
+    const msgDiv = document.createElement('div');
+    msgDiv.className = `chat-bubble ${sender} ${isError ? 'error' : ''}`;
+    
+    if (isError) {
+        errorIdCounter++;
+        const uniqueId = `error-text-${errorIdCounter}`;
+        
+        // Escape quotes for the data-raw-text attribute
+        const escapedRawText = rawText ? rawText.replace(/"/g, '&quot;') : 'No detailed error provided.';
+        
+        // Note: Button will appear on top due to CSS flex-direction: column-reverse;
+        msgDiv.innerHTML = `
+            <div id="${uniqueId}" class="error-text" data-raw-text="${escapedRawText}">
+                ${text}
+            </div>
+            <button class="copy-error-btn" onclick="copyCode('${uniqueId}', this)">
+                Copy Error
+            </button>
+        `;
+
+    } else {
+        msgDiv.innerHTML = text;
+    }
+    
+    chatInterface.appendChild(msgDiv);
+    chatInterface.scrollTop = chatInterface.scrollHeight; 
+}
+
+// --- 4. Form Submission (AJAX Query) ---
+document.getElementById('form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const questionText = textarea.value.trim();
+    
+    const sparqlElement = document.getElementById('sparql');
+    const resultsElement = document.getElementById('results');
+
+    if (!questionText) return;
+
+    // Reset textarea to default size after sending
+    textarea.style.height = defaultHeight + 'px';
+    
+    // 1. Add User Message
+    addMessage(questionText, 'user');
+    textarea.value = ''; // Clear input field
+
+    // 2. Add System Thinking Message (Waving Dots)
+    addMessage(LOADER_HTML, 'system-status');
+    const thinkingMessage = document.querySelector('.system-status:last-child'); 
+
+    // 3. Set Technical Details to Loader Dots
+    sparqlElement.innerHTML = PRE_PLACEHOLDER_HTML;
+    resultsElement.innerHTML = PRE_PLACEHOLDER_HTML;
+
+
+    try {
+        const resp = await fetch('/query', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({question: questionText})
+        });
+        
+        // Remove the loader message
+        if (thinkingMessage) thinkingMessage.remove(); 
+
+        let data;
+        let errorData = {error: 'Server returned error status.', sparql: 'N/A'};
+        let rawErrorText = ''; 
+        let displayErrorText = ''; 
+
+        
+        if (!resp.ok) {
+            try {
+                data = await resp.json();
+                errorData = data;
+                
+                // Formulate raw text for copying
+                rawErrorText = `Error: ${data.error || 'Unknown server error.'}\n\nAttempted SPARQL:\n${data.sparql || 'N/A'}`;
+                
+                // Formulate clean display text for the chat bubble
+                displayErrorText = `❌ Error: ${errorData.error || 'Unknown server error.'}`;
+
+            } catch (jsonError) {
+                const text = await resp.text();
+                // Handle non-JSON server error
+                displayErrorText = `❌ HTTP Error ${resp.status} (${resp.statusText}): Server returned a non-JSON response. Check Flask terminal for Traceback.`;
+                rawErrorText = `HTTP Error ${resp.status} (${resp.statusText}):\n${text}`;
+                console.error("Non-JSON Server Response:", text);
+            }
+
+            // --- Calling addMessage with correct display and raw data ---
+            addMessage(displayErrorText.replace(/\n/g, '<br>'), 'system', true, rawErrorText);
+
+            // Update Technical Details 
+            sparqlElement.textContent = errorData.sparql || 'N/A';
+            resultsElement.textContent = 'Execution Failed. See above error message.';
+            return;
+        }
+
+        // Success path
+        data = await resp.json();
+        const resultCount = data.results.results.bindings ? data.results.results.bindings.length : 0;
+        
+        addMessage(`✅ Success! Found **${resultCount}** results.<br>
+                    *Scroll down to the "Technical Details" section for the full SPARQL query and JSON results.*`, 'system');
+
+        // Update the content of the <pre> tags
+        sparqlElement.textContent = data.sparql;
+        resultsElement.textContent = JSON.stringify(data.results, null, 2);
+
+    } catch (e) {
+        if (thinkingMessage) thinkingMessage.remove(); 
+        const networkError = `Fatal client-side network error. Server unreachable or connection interrupted.`;
+        const rawNetworkError = `${networkError} (${e.message})`;
+
+        // --- Calling addMessage for network failure ---
+        addMessage(`❌ ${networkError}. Check your console/network connection.`, 'system', true, rawNetworkError);
+
+        // Clear placeholders on technical error
+        sparqlElement.textContent = SPARQL_DEFAULT_TEXT;
+        resultsElement.textContent = RESULTS_DEFAULT_TEXT;
+        console.error(e);
+    }
+});
+
+// --- 5. Initial Chatbot Message on Load ---
+window.onload = function() {
+    addMessage("Hello! Ask your questions about the JLR Supply Chain to generate a SPARQL query.", 'system');
+};
+</script>
+</body>
+</html>

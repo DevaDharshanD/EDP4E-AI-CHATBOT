@@ -1,0 +1,365 @@
+/* --- FINAL Enhanced styles.css content --- */
+:root {
+  --primary-color: #007bff; /* Tech Blue */
+  --secondary-color: #28a745; /* Success Green */
+  --error-color: #dc3545; /* Error Red */
+  --background-light: #f0f2f5;
+  --text-dark: #222;
+  --text-light: #fff;
+  --border-color: #ced4da;
+  --card-background: #ffffffcc;
+  --code-background: #1e1e1e;
+  --code-header-background: #333;
+  --glass-border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+body { 
+  font-family: 'Poppins', 'Segoe UI', 'Roboto', sans-serif; 
+  margin: 0; 
+  padding: 0; 
+  background: linear-gradient(135deg, #1f4287, #2d5aa8); 
+  color: var(--text-dark);
+  line-height: 1.6;
+}
+
+.container {
+  max-width: 1000px;
+  margin: 0 auto;
+  min-height: 100vh; 
+  display: flex;
+  flex-direction: column;
+  padding: 20px;
+}
+
+h1 { 
+  color: var(--text-light); 
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.4); 
+  font-weight: 900; 
+  border-bottom: 3px solid var(--primary-color);
+  padding-bottom: 10px;
+  margin-bottom: 25px;
+  padding-top: 10px; 
+  text-align: center;
+  letter-spacing: 2px; 
+}
+
+/* --- Chatbot Interface --- */
+#chatbot-interface {
+  flex-grow: 1; 
+  overflow-y: auto; 
+  padding: 20px;
+  border: var(--glass-border); 
+  background: rgba(255, 255, 255, 0.1); 
+  backdrop-filter: blur(15px); 
+  border-radius: 16px 16px 0 0;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.3); 
+  transition: all 0.3s ease;
+}
+
+.chat-bubble {
+  padding: 12px 18px;
+  margin: 12px 20px;
+  font-size: 0.95rem;
+  line-height: 1.4;
+  word-wrap: break-word;
+  animation: fadeInUp 0.4s ease;
+  transition: transform 0.2s; 
+  max-width: 70%; 
+}
+.chat-bubble:hover {
+    transform: translateY(-2px);
+}
+
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(15px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* User Message (Dynamic Width, Right Alignment) */
+.user {
+  background: linear-gradient(135deg, #4c669f, #2d5aa8); 
+  color: var(--text-light);
+  margin-left: auto;
+  margin-right: 20px; 
+  display: table; 
+  max-width: 70%; 
+  border-radius: 20px 20px 5px 20px;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.25);
+}
+
+/* System Response (Dynamic Width, Left Alignment) */
+.system {
+  background: rgba(255, 255, 255, 0.85); 
+  color: var(--text-dark);
+  margin-right: auto;
+  margin-left: 20px; 
+  display: table; 
+  max-width: 70%; 
+  border-radius: 20px 20px 20px 5px; 
+  box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+}
+.system strong {
+  font-weight: 700;
+  color: #004d99; 
+}
+
+/* Status/Thinking Message (Custom Floating Loader - No Bubble) */
+.system-status {
+  background: none; 
+  box-shadow: none;
+  width: auto;
+  padding: 0;
+  margin: 10px 20px;
+  text-align: left;
+  display: flex;
+  align-items: center;
+}
+
+/* --- Loader Dots (White, Waving Animation) --- */
+.loader-dots {
+    display: flex;
+    justify-content: flex-start; 
+    align-items: center;
+    padding: 0 10px;
+    height: 30px; 
+}
+.loader-dots span {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    margin: 0 3px;
+    background-color: var(--text-light); 
+    border-radius: 50%;
+    animation: wave 1.2s infinite ease-in-out;
+}
+.loader-dots span:nth-child(1) {
+    animation-delay: 0s;
+}
+.loader-dots span:nth-child(2) {
+    animation-delay: 0.2s;
+}
+.loader-dots span:nth-child(3) {
+    animation-delay: 0.4s;
+}
+
+@keyframes wave {
+    0%, 100% {
+        transform: translateY(0);
+        opacity: 0.8;
+    }
+    50% {
+        transform: translateY(-5px); 
+        opacity: 1;
+    }
+}
+/* --- End Loader Dots --- */
+
+
+/* Error Message (Dynamic Width, Left Alignment) */
+.chat-bubble.error {
+  background: linear-gradient(135deg, #a71d2a, #dc3545);
+  color: var(--text-light);
+  font-weight: 700;
+  margin-right: auto;
+  margin-top: 10px;
+  margin-left: 20px;
+  margin-bottom: auto;
+  display: table; 
+  max-width: 70%;
+  border-radius: 20px 20px 20px 5px;
+  box-shadow: 0 4px 10px rgba(220, 53, 69, 0.4);
+  /* Use flexbox for button/text positioning */
+  display: flex;
+  flex-direction: column; 
+  align-items: flex-start;
+  /* CRITICAL FIX: Zero padding on the bubble itself to control borders */
+  padding: 0; 
+  overflow: hidden; /* Helps ensure nothing spills out */
+}
+.copy-error-btn {
+    align-self: flex-end; 
+    /* CRITICAL FIX: Ensure button is inside padding zone */
+    margin: 10px 15px 10px 0; /* Space above button, aligned right inside bubble */
+    padding: 6px 12px;
+    background: none;
+    border: 1px solid var(--text-light);
+    color: var(--text-light);
+    border-radius: 15px;
+    cursor: pointer;
+    font-weight: 500;
+    font-size: 0.8rem;
+    transition: background 0.3s;
+}
+.copy-error-btn:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+.error-text {
+    width: 100%; 
+    /* CRITICAL FIX: Apply all the content padding here */
+    padding: 5px 18px 12px 18px; 
+    margin: 0; 
+}
+
+
+/* --- Input Form --- */
+#form {
+  display: flex;
+  padding: 15px;
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(15px);
+  border-radius: 0 0 16px 16px;
+  box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.2);
+  border: var(--glass-border);
+  border-top: none;
+  align-items: center; 
+}
+
+textarea { 
+  flex-grow: 1; 
+  /* CRITICAL FIX: box-sizing includes padding in the height */
+  box-sizing: border-box; 
+  min-height: 45px; 
+  max-height: 200px; 
+  height: 45px; 
+  padding: 12px; 
+  font-family: 'Poppins', sans-serif;
+  background: rgba(255, 255, 255, 0.1); 
+  border: var(--glass-border); 
+  border-radius: 25px; 
+  margin-right: 10px;
+  resize: none; 
+  font-size: 1rem;
+  color: var(--text-light); 
+  transition: border-color 0.3s, box-shadow 0.3s, height 0.2s; 
+  text-align: center;
+  overflow-y: hidden; 
+}
+textarea::placeholder {
+  color: rgba(255, 255, 255, 0.6);
+  text-align: center;
+}
+textarea::-webkit-input-placeholder { text-align: center; } 
+textarea:-moz-placeholder { text-align: center; } 
+textarea::-moz-placeholder { text-align: center; } 
+textarea:-ms-input-placeholder { text-align: center; } 
+
+textarea:focus {
+  outline: none;
+  border-color: var(--secondary-color);
+  box-shadow: 0 0 10px rgba(40, 167, 69, 0.5); 
+}
+
+button { 
+  padding: 10px 24px; 
+  background: linear-gradient(135deg, var(--secondary-color), #1e7e34); 
+  color: var(--text-light); 
+  border: none; 
+  border-radius: 25px; 
+  cursor: pointer; 
+  transition: background 0.3s, transform 0.1s, box-shadow 0.3s; 
+  font-weight: 700;
+  text-transform: uppercase;
+  font-family: 'Poppins', sans-serif;
+}
+
+/* --- Technical Details and Code Blocks (Unchanged) --- */
+.technical-details {
+  padding: 20px 0;
+}
+.technical-details h3 {
+  color: var(--text-light); 
+  text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.5);
+  margin-bottom: 15px;
+  font-weight: 900;
+  font-size: 1.5rem;
+  text-align: center;
+}
+.result-container { 
+  display: flex; 
+  gap: 20px; 
+  margin-top: 15px; 
+}
+.result-col { 
+  flex: 1; 
+  min-width: 0; 
+  background: rgba(255, 255, 255, 0.1); 
+  backdrop-filter: blur(6px);
+  padding: 0; 
+  border-radius: 12px;
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.25);
+  border: var(--glass-border);
+  overflow: hidden; 
+  transition: transform 0.2s ease;
+}
+.result-col:hover {
+  transform: translateY(-5px); 
+}
+
+.code-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 15px;
+    background: var(--code-header-background);
+    color: var(--text-light);
+    border-bottom: 1px solid #444;
+}
+.code-header h4 {
+    margin: 0;
+    font-size: 1rem;
+    color: var(--text-light);
+}
+.copy-btn {
+    background: none;
+    border: none;
+    color: var(--secondary-color);
+    font-weight: 700;
+    cursor: pointer;
+    padding: 5px 10px;
+    border-radius: 5px;
+    transition: color 0.2s;
+    text-transform: uppercase;
+    font-size: 0.75rem;
+    font-family: 'Poppins', sans-serif;
+}
+.copy-btn:hover {
+    color: #fff;
+    background-color: var(--secondary-color);
+}
+.copy-btn:active {
+    transform: scale(0.95);
+}
+
+.pre-placeholder {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100px;
+    color: #999;
+}
+.pre-placeholder .loader-dots span {
+    background-color: #666;
+}
+pre { 
+  background: var(--code-background); 
+  color: #f8f8f2;
+  padding: 1rem; 
+  border-radius: 0 0 12px 12px; 
+  overflow-x: auto; 
+  white-space: pre-wrap; 
+  word-wrap: break-word; 
+  font-family: 'Consolas', 'Courier New', monospace; 
+  font-size: 0.85rem;
+  border: none; 
+  max-height: 350px; 
+  margin: 0; 
+}
+
+@media (max-width: 768px) {
+  .result-container {
+    flex-direction: column;
+  }
+  .container {
+    padding: 10px;
+  }
+}
