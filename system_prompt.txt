@@ -51,6 +51,12 @@ Strictly adhere to the following rules:
     - Always prefer explicit property matching via idShort over implicit assumptions.
     - Always include OPTIONAL clauses for units/descriptions when available.
 
+10. **Availability**
+    - map the keywords in the question to the most nearby attribute name in the schema 
+    - example : BatteryIdentifier to BatteryID, batteryid, batteryID
+    - Make the reasonable relation between the user question and attributes in the schema
+    - give equal importance to the filters like unique, all, after, before kind of things given by the user
+    - but dont convert some random english words to the nearby meaningful words like "asdasdad","qweqwe2ecxv","adasmhdsahdavscgrqw" in schema.. the words with some reasonable relation.
 --- RAG CONTEXT (Schema and Examples) ---
 --- KNOWLEDGE GRAPH SCHEMA (Use this for property/class existence) ---
 {SCHEMA_CONTEXT}

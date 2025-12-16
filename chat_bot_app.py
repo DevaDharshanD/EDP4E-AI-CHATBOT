@@ -14,9 +14,16 @@ from RAG_Schema import SchemaRAG
 load_dotenv("app.env")
 
 # --- industry Questions ---
-IndustryQuestions=[
-    
-]
+IndustryQuestions=["List vehicle battery compliance and carboon footprint Data",
+                   "List_Vehicles_whose_batteries_likely_suffering_from_harmful_charge_and_discharge_events",
+                   "List_Vehicles_with_HighEnergyBatteriesWithMinimalIdleTempAnd_Chem_As_NMC",
+                   "RatedCapacityVsNominalCapacityMismatchOverFivePercent",
+                   "Vehicle's_Battery_manufacturing_date_earlier_than_delivery_Date",
+                   "Vehicles_Battery_voltage_consistency_check",
+                   "Vehicles_Battery_with_high_usable_energy_and_low_Efficiency",
+                   "Vehicles_Battery_with_Solid_state_chemistry_and_mass_greater_than_600",
+                   "Vehicles_With_Solid_State_Battery_and_warrant_greater_Than_2"
+] 
 Queries_Dir=r"C:\Users\DDHARSHA\Documents\APP\Queries"
 
 
@@ -53,8 +60,9 @@ def query():
 
     question = (payload.get("question") or "").strip()
     if question in IndustryQuestions:
-        # Build file path: queries/<question>.txt
-        file_path = os.path.join(Queries_Dir, f"{question}.txt")
+        print("IndustryQuestions")
+        # Build file path: queries/<question>.sparql
+        file_path = os.path.join(Queries_Dir, f"{question}.sparql")
         try:
             with open(file_path, "r", encoding="utf-8") as f:
                 sparql = f.read().strip()
@@ -62,7 +70,7 @@ def query():
             raise ValueError(f"SPARQL file not found for question: {question}")
 
     else:
-        
+        print("LLM Approach")
         schema_context = schema_rag.retrieve(question, k=5) 
         sparql = generate_sparql_from_question(question, schema_context)
 

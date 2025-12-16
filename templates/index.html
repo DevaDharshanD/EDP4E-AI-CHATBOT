@@ -226,7 +226,8 @@ document.getElementById('form').addEventListener('submit', async (e) => {
 
     } catch (e) {
         if (thinkingMessage) thinkingMessage.remove(); 
-        const networkError = `Fatal client-side network error. Server unreachable or connection interrupted.`;
+        const networkError = `OOPS!! Network error at client-side `;
+        //network error. Server unreachable or connection interrupted.
         const rawNetworkError = `${networkError} (${e.message})`;
 
         // --- Calling addMessage for network failure ---

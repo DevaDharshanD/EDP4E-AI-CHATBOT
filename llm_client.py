@@ -9,7 +9,7 @@ from dotenv import load_dotenv
 load_dotenv("app.env")
 
 API_KEY = os.getenv("LLM_API_KEY")
-GEMINI_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent"
+GEMINI_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent"
 
 MAX_RETRIES = 1
 BASE_DELAY_SECONDS = 2
