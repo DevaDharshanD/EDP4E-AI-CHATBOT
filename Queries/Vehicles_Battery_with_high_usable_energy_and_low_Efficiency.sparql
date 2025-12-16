@@ -1,0 +1,23 @@
+PREFIX bp: <http://edp4e.org#>
+PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+
+SELECT ?vehicle 
+       (CONCAT(STR(?usableEnergy), " ", COALESCE(?energyUnit, "")) AS ?UsableEnergy)
+       (CONCAT(STR(?efficiency), " ", COALESCE(?effUnit, "")) AS ?Efficiency)
+WHERE {
+  ?vehicle bp:hasBDS ?submodel .
+  ?submodel bp:hasProperty ?energyProp, ?effProp .
+
+  ?energyProp bp:idShort "CertifiedUsableBatteryEnergy" ;
+              bp:value ?rawEnergy .
+  OPTIONAL { ?energyProp bp:description ?energyUnit }
+
+  ?effProp bp:idShort "InitialRoundTripEnergyEfficiency" ;
+           bp:value ?rawEff .
+  OPTIONAL { ?effProp bp:description ?effUnit }
+
+  BIND(xsd:integer(?rawEnergy) AS ?usableEnergy)
+  BIND(xsd:integer(?rawEff) AS ?efficiency)
+
+  FILTER(?usableEnergy > 40 && ?efficiency < 75)
+}

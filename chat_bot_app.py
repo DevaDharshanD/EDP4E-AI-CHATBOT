@@ -13,6 +13,13 @@ from RAG_Schema import SchemaRAG
 
 load_dotenv("app.env")
 
+# --- industry Questions ---
+IndustryQuestions=[
+    
+]
+Queries_Dir=r"C:\Users\DDHARSHA\Documents\APP\Queries"
+
+
 # --- Environment Configuration ---
 try:
     SCHEMA_PATH = os.environ["SCHEMA_PATH"]
@@ -45,19 +52,27 @@ def query():
         return jsonify({"error": "Invalid JSON request body. Server received empty or corrupt data."}), 400
 
     question = (payload.get("question") or "").strip()
-    if not question:
-        return jsonify({"error": "Question required."}), 400
+    if question in IndustryQuestions:
+        # Build file path: queries/<question>.txt
+        file_path = os.path.join(Queries_Dir, f"{question}.txt")
+        try:
+            with open(file_path, "r", encoding="utf-8") as f:
+                sparql = f.read().strip()
+        except FileNotFoundError:
+            raise ValueError(f"SPARQL file not found for question: {question}")
 
-    schema_context = schema_rag.retrieve(question, k=5) 
-    sparql = generate_sparql_from_question(question, schema_context)
+    else:
+        
+        schema_context = schema_rag.retrieve(question, k=5) 
+        sparql = generate_sparql_from_question(question, schema_context)
 
-    # --- Error Mapping and Handling (LLM/API related) ---
-    if "Rate limit exceeded" in sparql or "RESOURCE_EXHAUSTED" in sparql:
-        return jsonify({"error": "Gemini quota exceeded (429). Please wait for reset.", "sparql": None}), 429
-    if sparql.startswith("LLM API HTTP Error 400"):
-        return jsonify({"error": "Bad request to Gemini (400). Prompt too large or invalid key/path.", "sparql": None}), 400
-    if sparql.startswith(("LLM API HTTP Error", "Network error", "Failed to get")):
-        return jsonify({"error": sparql, "sparql": None}), 503
+        # --- Error Mapping and Handling (LLM/API related) ---
+        if "Rate limit exceeded" in sparql or "RESOURCE_EXHAUSTED" in sparql:
+            return jsonify({"error": "Gemini quota exceeded (429). Please wait for reset.", "sparql": None}), 429
+        if sparql.startswith("LLM API HTTP Error 400"):
+            return jsonify({"error": "Bad request to Gemini (400). Prompt too large or invalid key/path.", "sparql": None}), 400
+        if sparql.startswith(("LLM API HTTP Error", "Network error", "Failed to get")):
+            return jsonify({"error": sparql, "sparql": None}), 503
 
     # --- Validation ---
     try:

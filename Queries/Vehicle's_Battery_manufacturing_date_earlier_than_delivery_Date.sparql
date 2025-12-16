@@ -1,0 +1,20 @@
+PREFIX bp: <http://edp4e.org#>
+PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+
+SELECT ?vehicle ?MfgDate ?DelivDate
+WHERE {
+  ?vehicle bp:hasMFG ?mfg .
+  ?mfg bp:hasProperty ?mfgProp .
+  ?mfgProp bp:idShort "ManufacturingDate" ;
+           bp:value ?manufacturingDateRaw .
+
+  ?vehicle bp:hasCRM ?crm .
+  ?crm bp:hasProperty ?crmProp .
+  ?crmProp bp:idShort "DateOfBatteryDelivery" ;
+           bp:value ?deliveryDateRaw .
+
+  FILTER(xsd:date(?manufacturingDateRaw) < xsd:date(?deliveryDateRaw))
+
+  BIND(STR(xsd:date(?manufacturingDateRaw)) AS ?MfgDate)
+  BIND(STR(xsd:date(?deliveryDateRaw)) AS ?DelivDate)
+}

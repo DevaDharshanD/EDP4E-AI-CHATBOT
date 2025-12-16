@@ -1,0 +1,20 @@
+PREFIX bp: <http://edp4e.org#>
+PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+
+SELECT ?vehicle ?chemistry
+       (CONCAT(STR(?warranty), " ", COALESCE(?warrantyUnit, "")) AS ?WarrantyPeriod)
+WHERE {
+  ?vehicle bp:hasBDS ?bds .
+  ?bds bp:hasProperty ?chemProp .
+  ?chemProp bp:idShort "BatteryChemistry" ;
+            bp:value ?chemistry .
+
+  ?vehicle bp:hasCRM ?crm .
+  ?crm bp:hasProperty ?warrantyProp .
+  ?warrantyProp bp:idShort "WarrantyPeriodOfBattery" ;
+                bp:value ?rawWarranty .
+  OPTIONAL { ?warrantyProp bp:description ?warrantyUnit }
+
+  BIND(xsd:integer(?rawWarranty) AS ?warranty)
+  FILTER(?chemistry = "Solid-State" && ?warranty > 2)
+}

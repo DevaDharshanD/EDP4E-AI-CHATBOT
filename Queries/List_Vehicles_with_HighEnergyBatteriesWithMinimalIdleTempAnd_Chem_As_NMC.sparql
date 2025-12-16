@@ -1,0 +1,27 @@
+PREFIX bp: <http://edp4e.org#>
+PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+
+SELECT ?vehicle 
+       (CONCAT(STR(?usableEnergy), " ", COALESCE(?energyUnit, "")) AS ?UsableEnergy)
+       (CONCAT(STR(?tempLower), " ", COALESCE(?tempUnit, "")) AS ?TempLower)
+       ?chemistry
+WHERE {
+  ?vehicle bp:hasBDS ?bds .
+  ?bds bp:hasProperty ?energyProp, ?tempProp, ?chemProp .
+
+  ?energyProp bp:idShort "CertifiedUsableBatteryEnergy" ;
+              bp:value ?rawEnergy .
+  OPTIONAL { ?energyProp bp:description ?energyUnit }
+
+  ?tempProp bp:idShort "TemperatureRangeIdleStateLowerBoundary" ;
+            bp:value ?rawTempLower .
+  OPTIONAL { ?tempProp bp:description ?tempUnit }
+
+  ?chemProp bp:idShort "BatteryChemistry" ;
+            bp:value ?chemistry .
+
+  BIND(xsd:integer(?rawEnergy) AS ?usableEnergy)
+  BIND(xsd:integer(?rawTempLower) AS ?tempLower)
+
+  FILTER(?usableEnergy > 80 && ?tempLower < 30 && ?chemistry = "NMC")
+}

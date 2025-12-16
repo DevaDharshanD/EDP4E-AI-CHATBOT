@@ -1,0 +1,14 @@
+PREFIX bp: <http://edp4e.org#>
+
+SELECT ?vehicle ?compliance ?footprintLabel
+WHERE {
+  ?vehicle bp:hasXRAY ?xraySubmodel .
+  ?xraySubmodel bp:hasProperty ?xrayProp .
+  ?xrayProp bp:idShort "TestReportComplianceResults" ;
+            bp:value ?compliance .
+
+  ?vehicle bp:hasSP ?spSubmodel .
+  ?spSubmodel bp:hasProperty ?spProp .
+  ?spProp bp:idShort "CarbonFootprintLabel" ;
+          bp:value ?footprintLabel .
+}

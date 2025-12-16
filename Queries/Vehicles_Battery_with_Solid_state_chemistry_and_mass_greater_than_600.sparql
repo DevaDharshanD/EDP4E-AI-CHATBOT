@@ -1,0 +1,19 @@
+PREFIX bp: <http://edp4e.org#>
+PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+
+SELECT ?vehicle ?chemistry
+       (CONCAT(STR(?mass), " ", COALESCE(?massUnit, "")) AS ?Batterymass)
+WHERE {
+  ?vehicle bp:hasBDS ?submodel .
+  ?submodel bp:hasProperty ?chemProp, ?massProp .
+
+  ?chemProp bp:idShort "BatteryChemistry" ;
+            bp:value ?chemistry .
+
+  ?massProp bp:idShort "BatteryMass" ;
+            bp:value ?rawMass .
+  OPTIONAL { ?massProp bp:description ?massUnit }
+
+  BIND(xsd:integer(?rawMass) AS ?mass)
+  FILTER(?chemistry = "Solid-State" && ?mass > 600)
+}

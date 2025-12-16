@@ -1,0 +1,18 @@
+PREFIX bp: <http://edp4e.org#>
+PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+
+SELECT ?vehicle (STR(?minV) AS ?MinV) (STR(?nomV) AS ?NomV) (STR(?maxV) AS ?MaxV)
+WHERE {
+  ?vehicle bp:hasBDS ?submodel .
+  ?submodel bp:hasProperty ?minProp, ?nomProp, ?maxProp .
+
+  ?minProp bp:idShort "MinimumVoltage" ; bp:value ?rawMinV .
+  ?nomProp bp:idShort "NominalVoltage" ; bp:value ?rawNomV .
+  ?maxProp bp:idShort "MaximumVoltage" ; bp:value ?rawMaxV .
+
+  BIND(xsd:integer(?rawMinV) AS ?minV)
+  BIND(xsd:integer(?rawNomV) AS ?nomV)
+  BIND(xsd:integer(?rawMaxV) AS ?maxV)
+
+  FILTER(?minV <= ?nomV && ?nomV <= ?maxV)
+}

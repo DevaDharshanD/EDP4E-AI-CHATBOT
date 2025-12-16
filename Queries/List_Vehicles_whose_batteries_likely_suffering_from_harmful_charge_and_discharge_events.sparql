@@ -1,0 +1,18 @@
+PREFIX bp: <http://edp4e.org#>
+PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+
+SELECT ?vehicle ?overcharge ?deepDischarge ?expectedCycles
+WHERE {
+  ?vehicle bp:hasVCDP ?submodel .
+  ?submodel bp:hasProperty ?overProp, ?deepProp, ?lifeProp .
+
+  ?overProp bp:idShort "OverchargeEvents" ; bp:value ?rawOver .
+  ?deepProp bp:idShort "DeepDischargeEvents" ; bp:value ?rawDeep .
+  ?lifeProp bp:idShort "ExpectedLifetimeCycles" ; bp:value ?rawCycles .
+
+  BIND(xsd:integer(?rawOver) AS ?overcharge)
+  BIND(xsd:integer(?rawDeep) AS ?deepDischarge)
+  BIND(xsd:integer(?rawCycles) AS ?expectedCycles)
+
+  FILTER((?overcharge > 0 || ?deepDischarge > 0) && ?expectedCycles < 800)
+}

@@ -1,0 +1,28 @@
+PREFIX bp: <http://edp4e.org#>
+PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+
+SELECT ?vehicle 
+       (CONCAT(STR(?ratedCapacity), " ", COALESCE(?ratedUnit, "")) AS ?RatedCapacity)
+       (CONCAT(STR(?nominalCapacity), " ", COALESCE(?nominalUnit, "")) AS ?NominalCapacity)
+       ?diff
+WHERE {
+  # Sharepoint rated capacity
+  ?vehicle bp:hasSP ?sp .
+  ?sp bp:hasProperty ?ratedProp .
+  ?ratedProp bp:idShort "RatedCapacity" ;
+             bp:value ?rawRated .
+  OPTIONAL { ?ratedProp bp:description ?ratedUnit }
+
+  # Use CertifiedUsableBatteryEnergy as nominal capacity
+  ?vehicle bp:hasBDS ?bds .
+  ?bds bp:hasProperty ?nomProp .
+  ?nomProp bp:idShort "CertifiedUsableBatteryEnergy" ;
+           bp:value ?rawNominal .
+  OPTIONAL { ?nomProp bp:description ?nominalUnit }
+
+  BIND(xsd:decimal(?rawRated) AS ?ratedCapacity)
+  BIND(xsd:decimal(?rawNominal) AS ?nominalCapacity)
+  BIND(ABS(?ratedCapacity - ?nominalCapacity) / ?nominalCapacity AS ?diff)
+
+  FILTER(?diff > 0.05)
+}
