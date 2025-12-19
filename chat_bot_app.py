@@ -1,105 +1,91 @@
-# app.py
-
 import os
-# CHANGE: Import render_template (not render_template_string)
 from flask import Flask, request, render_template, jsonify 
-# Assuming supporting files are in the same directory
+from dotenv import load_dotenv
+
+# Import our new caching client wrapper
 from llm_client import generate_sparql_from_question
 from sparql_guard import validate_sparql 
 from fuseki_client import run_sparql_select
-from dotenv import load_dotenv
-from RAG_Schema import SchemaRAG
-# Note: Removed the redundant 'import json' and diagnostic print statements
 
 load_dotenv("app.env")
 
-# --- industry Questions ---
-IndustryQuestions=["List vehicle battery compliance and carboon footprint Data",
-                   "List_Vehicles_whose_batteries_likely_suffering_from_harmful_charge_and_discharge_events",
-                   "List_Vehicles_with_HighEnergyBatteriesWithMinimalIdleTempAnd_Chem_As_NMC",
-                   "RatedCapacityVsNominalCapacityMismatchOverFivePercent",
-                   "Vehicle's_Battery_manufacturing_date_earlier_than_delivery_Date",
-                   "Vehicles_Battery_voltage_consistency_check",
-                   "Vehicles_Battery_with_high_usable_energy_and_low_Efficiency",
-                   "Vehicles_Battery_with_Solid_state_chemistry_and_mass_greater_than_600",
-                   "Vehicles_With_Solid_State_Battery_and_warrant_greater_Than_2"
-] 
-Queries_Dir=r"C:\Users\DDHARSHA\Documents\APP\Queries"
-
-
-# --- Environment Configuration ---
-try:
-    SCHEMA_PATH = os.environ["SCHEMA_PATH"]
-    FUSEKI_ENDPOINT = os.environ["FUSEKI_ENDPOINT"]
-except KeyError as e:
-    raise RuntimeError(f"Missing environment variable: {e}. Check app.env.")
-
-# Controls print output for debugging
+# --- Configuration ---
+Queries_Dir = r"C:\Users\DDHARSHA\Documents\APP\Queries" # Ensure this path exists or is correct
 LOGGING_ENABLED = os.getenv("LOGGING_ENABLED", "false").lower() == "true"
+FUSEKI_ENDPOINT = os.getenv("FUSEKI_ENDPOINT")
+SCHEMA_PATH = os.environ.get("SCHEMA_PATH", "Schema.ttl")
 
-# --- Initialization ---
+# --- Pre-defined Industry Questions ---
+IndustryQuestions = [
+    "List vehicles battery compliance and carboon footprint Data",
+    "List_Vehicles_whose_batteries_likely_suffering_from_harmful_charge_and_discharge_events",
+    "List_Vehicles_with_HighEnergyBatteriesWithMinimalIdleTempAnd_Chem_As_NMC",
+    "RatedCapacityVsNominalCapacityMismatchOverFivePercent",
+    "Vehicle's_Battery_manufacturing_date_earlier_than_delivery_Date",
+    "Vehicles_Battery_voltage_consistency_check",
+    "Vehicles_Battery_with_high_usable_energy_and_low_Efficiency",
+    "Vehicles_Battery_with_Solid_state_chemistry_and_mass_greater_than_600",
+    "Vehicles_With_Solid_State_Battery_and_warrant_greater_Than_2"
+] 
+
 app = Flask(__name__)
-# Initialize RAG system with the schema file
-schema_rag = SchemaRAG(SCHEMA_PATH)
 
-# --- Flask Routes ---
+# Note: We no longer strictly need 'SchemaRAG' for the LLM path 
+# because the full schema is now cached in 'llm_client.py'.
 
 @app.route("/", methods=["GET"])
 def index():
-    """Renders the HTML interface from the external template file (templates/index.html)."""
-    # CHANGE: Uses render_template to look in the 'templates' folder
     return render_template("index.html")
 
 @app.route("/query", methods=["POST"])
 def query():
-    """Handles the query generation and execution pipeline."""
     payload = request.get_json(force=True, silent=True)
-    
     if payload is None:
-        return jsonify({"error": "Invalid JSON request body. Server received empty or corrupt data."}), 400
+        return jsonify({"error": "Invalid JSON"}), 400
 
     question = (payload.get("question") or "").strip()
+    sparql = ""
+
+    # 1. Exact Match Strategy (Pre-canned queries)
     if question in IndustryQuestions:
-        print("IndustryQuestions")
-        # Build file path: queries/<question>.sparql
+        if LOGGING_ENABLED: print(f"Strategy: Pre-defined Industry Question")
         file_path = os.path.join(Queries_Dir, f"{question}.sparql")
         try:
             with open(file_path, "r", encoding="utf-8") as f:
                 sparql = f.read().strip()
         except FileNotFoundError:
-            raise ValueError(f"SPARQL file not found for question: {question}")
+            return jsonify({"error": f"Pre-defined SPARQL file missing for: {question}"}), 500
 
+    # 2. Generative AI Strategy (Context Caching)
     else:
-        print("LLM Approach")
-        schema_context = schema_rag.retrieve(question, k=5) 
-        sparql = generate_sparql_from_question(question, schema_context)
+        if LOGGING_ENABLED: print(f"Strategy: Gemini Context Cache")
+        
+        # We pass empty string for context because the client handles caching internally
+        sparql = generate_sparql_from_question(question, "")
 
-        # --- Error Mapping and Handling (LLM/API related) ---
-        if "Rate limit exceeded" in sparql or "RESOURCE_EXHAUSTED" in sparql:
-            return jsonify({"error": "Gemini quota exceeded (429). Please wait for reset.", "sparql": None}), 429
-        if sparql.startswith("LLM API HTTP Error 400"):
-            return jsonify({"error": "Bad request to Gemini (400). Prompt too large or invalid key/path.", "sparql": None}), 400
-        if sparql.startswith(("LLM API HTTP Error", "Network error", "Failed to get")):
+        # Error Handling for LLM responses
+        if "Error" in sparql or sparql.startswith("Failed"):
             return jsonify({"error": sparql, "sparql": None}), 503
 
-    # --- Validation ---
+    # 3. Validation
     try:
         validate_sparql(sparql)
-    except Exception as e:
-        return jsonify({"error": f"SPARQL validation failed: {e}", "sparql": sparql}), 400
+    except ValueError as ve:
+        return jsonify({"error": f"SPARQL Validation Error: {ve}", "sparql": sparql}), 400
 
-    # --- Execution ---
+    # 4. Execution (Fuseki)
     try:
         results = run_sparql_select(FUSEKI_ENDPOINT, sparql)
-    except Exception as e:
-        return jsonify({"error": f"Fuseki query failed: {e}", "sparql": sparql}), 500
+    except RuntimeError as re:
+        return jsonify({"error": str(re), "sparql": sparql}), 500
 
     if LOGGING_ENABLED:
-        print("Question:", question)
-        print("SPARQL:", sparql)
+        print(f"--- Generated Query ---\n{sparql}\n-----------------------")
 
     return jsonify({"sparql": sparql, "results": results})
 
 if __name__ == "__main__":
-    print("Starting Knowledge Graph RAG Assistant on http://127.0.0.1:8000/")
+    if not FUSEKI_ENDPOINT:
+        print("WARNING: FUSEKI_ENDPOINT not set in app.env")
+    print("Starting JLR Supply Chain Assistant (Caching Enabled)...")
     app.run(host="127.0.0.1", port=8000, debug=True)

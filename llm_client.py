@@ -1,90 +1,121 @@
-# llm_client.py
-
 import os
 import requests
 import time
-import random
+import json
 from dotenv import load_dotenv
 
 load_dotenv("app.env")
 
 API_KEY = os.getenv("LLM_API_KEY")
-GEMINI_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent"
 
-MAX_RETRIES = 1
-BASE_DELAY_SECONDS = 2
-SYSTEM_PROMPT_PATH = "system_prompt.txt"
+# Caching requires specific versioned models (e.g., -001), not generic aliases
+MODEL_NAME = "models/gemini-1.5-flash-001" 
+BASE_URL = "https://generativelanguage.googleapis.com/v1beta"
 
-def load_system_prompt(file_path: str = SYSTEM_PROMPT_PATH, schema_context: str = "") -> str:
-    """
-    Loads the system prompt template and dynamically inserts the RAG schema context
-    into the {SCHEMA_CONTEXT} placeholder defined in system_prompt.txt.
-    """
-    try:
-        with open(file_path, "r", encoding="utf-8") as f:
-            template = f.read().strip()
-            # CRITICAL: Replace the placeholder with the actual RAG context
-            full_prompt = template.replace("{SCHEMA_CONTEXT}", schema_context)
-            return full_prompt
-    except FileNotFoundError:
-        # Return an error string that app.py can catch
-        return f"LLM API HTTP Error 400: System prompt file not found at {file_path}"
+class GeminiCacheClient:
+    def __init__(self, system_prompt_path="system_prompt.txt", schema_path="Schema.ttl"):
+        self.system_prompt_path = system_prompt_path
+        self.schema_path = schema_path
+        self.cache_name = None
+        self.cache_expiration = 0
+        
+        # Load file contents immediately
+        self.full_system_instruction = self._build_system_instruction()
 
-
-def generate_sparql_from_question(question: str, schema_context: str) -> str:
-    """Sends the question and context to the Gemini API to generate a SPARQL query."""
-    if not API_KEY:
-        return "LLM API HTTP Error 400: Gemini API key missing. Check app.env."
-
-    # Load system prompt with the integrated schema context
-    system_prompt_content = load_system_prompt(schema_context=schema_context)
-    
-    # If file loading failed, return the error immediately
-    if system_prompt_content.startswith("LLM API HTTP Error"):
-        return system_prompt_content
-
-    # Simplified user prompt
-    user_prompt = f"""Natural Language Question: {question}
-SPARQL Query:"""
-
-    payload = {
-        "system_instruction": {"parts": [{"text": system_prompt_content}]},
-        "contents": [
-            {"role": "user", "parts": [{"text": user_prompt}]}
-        ]
-    }
-
-    headers = {
-        "Content-Type": "application/json",
-        "X-goog-api-key": API_KEY
-    }
-
-    resp = None
-    for attempt in range(MAX_RETRIES):
+    def _build_system_instruction(self) -> str:
+        """Reads files and merges Schema into the System Prompt."""
         try:
-            resp = requests.post(GEMINI_URL, headers=headers, json=payload, timeout=30)
+            with open(self.system_prompt_path, "r", encoding="utf-8") as f:
+                prompt_template = f.read()
+            
+            # We use the FULL schema for caching, not just snippets
+            with open(self.schema_path, "r", encoding="utf-8") as f:
+                schema_content = f.read()
+
+            # Merge
+            return prompt_template.replace("{SCHEMA_CONTEXT}", schema_content)
+        except FileNotFoundError as e:
+            print(f"CRITICAL ERROR: {e}")
+            return ""
+
+    def _create_cache(self):
+        """Creates a new cache on Google servers and returns the resource name."""
+        url = f"{BASE_URL}/cachedContents?key={API_KEY}"
+        
+        payload = {
+            "model": MODEL_NAME,
+            "displayName": "JLR_SupplyChain_Context",
+            "systemInstruction": {
+                "parts": [{"text": self.full_system_instruction}]
+            },
+            # Cache for 1 hour (3600s). You can increase this if needed.
+            "ttl": "3600s"
+        }
+
+        print("Creating new Gemini Context Cache...")
+        try:
+            resp = requests.post(url, json=payload, timeout=30)
             resp.raise_for_status()
-            break
-        except requests.exceptions.HTTPError as e:
-            if resp.status_code in (429, 400):
-                if attempt == MAX_RETRIES - 1:
-                    return f"Gemini API Error {resp.status_code}: {resp.text}"
-                delay = BASE_DELAY_SECONDS * (2 ** attempt) + random.uniform(0, 1)
-                print(f"[{resp.status_code}] error. Retrying in {delay:.2f}s... (Attempt {attempt+1}/{MAX_RETRIES})")
-                time.sleep(delay)
-            else:
-                return f"LLM API HTTP Error {resp.status_code}: {e}"
+            data = resp.json()
+            
+            self.cache_name = data["name"]
+            # Set local expiry time (subtract 60s for safety buffer)
+            self.cache_expiration = time.time() + 3600 - 60
+            print(f"Cache Active: {self.cache_name} (Expires in 1 hr)")
+            
         except requests.exceptions.RequestException as e:
-            return f"Network error: {e}"
+            print(f"Failed to create cache: {e}")
+            self.cache_name = None
 
-    if resp is None or resp.status_code >= 400:
-        return f"Failed to get a successful response from Gemini. Status: {resp.status_code if resp else 'N/A'}"
+    def generate_sparql(self, question: str) -> str:
+        """Generates SPARQL using the active cache ID."""
+        if not API_KEY:
+            return "Error: LLM_API_KEY is missing."
 
-    data = resp.json()
-    try:
-        # Extract the generated text (the SPARQL query)
-        return data["candidates"][0]["content"]["parts"][0]["text"].strip()
-    except Exception as e:
-        if "error" in data:
-            return f"Gemini API Error in Response: {data['error']}"
-        return f"Gemini response parsing failed: {e}. Raw Data: {data}"
+        # 1. Check if cache exists and is valid
+        if not self.cache_name or time.time() > self.cache_expiration:
+            self._create_cache()
+            if not self.cache_name:
+                return "Error: Could not create context cache. Check logs."
+
+        # 2. Prepare Request
+        # Note: We do NOT send system_instruction here (it's in the cache)
+        url = f"{BASE_URL}/{MODEL_NAME}:generateContent?key={API_KEY}"
+        
+        user_prompt = f"Natural Language Question: {question}\nSPARQL Query:"
+        
+        payload = {
+            "contents": [
+                {"role": "user", "parts": [{"text": user_prompt}]}
+            ],
+            "cachedContent": self.cache_name
+        }
+
+        # 3. Execute
+        try:
+            resp = requests.post(url, json=payload, timeout=30)
+            
+            # Handle 404 (Cache Not Found) - It might have been deleted remotely
+            if resp.status_code == 404:
+                print("Cache not found (404). Recreating...")
+                self._create_cache()
+                # Update payload with new cache name and retry once
+                payload["cachedContent"] = self.cache_name
+                resp = requests.post(url, json=payload, timeout=30)
+
+            resp.raise_for_status()
+            data = resp.json()
+            
+            return data["candidates"][0]["content"]["parts"][0]["text"].strip()
+            
+        except Exception as e:
+            return f"Gemini API Error: {str(e)}"
+
+# Singleton Instance
+# We instantiate this once so the cache ID persists across Flask requests
+llm_client_instance = GeminiCacheClient()
+
+def generate_sparql_from_question(question: str, schema_context_unused: str = "") -> str:
+    """Wrapper function to maintain compatibility with app calls."""
+    # Note: schema_context_unused is ignored because we cached the FULL schema.
+    return llm_client_instance.generate_sparql(question)
