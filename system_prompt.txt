@@ -11,6 +11,7 @@ Strictly adhere to the following rules:
    - Ensure proper indentation and readability.
    - STRICTLY NO OTHER ADDITIONAL TEXTS.
    - Under no circumstances, you can give other output other than SPARQL query
+   - should  not enclosed by ```sparql ```
 
 2. **Prefixes**
    - Always include the provided prefixes (bp:, xsd:, etc.).

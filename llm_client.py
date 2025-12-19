@@ -1,3 +1,5 @@
+# llm_client.py
+
 import os
 import requests
 import time
@@ -8,8 +10,12 @@ load_dotenv("app.env")
 
 API_KEY = os.getenv("LLM_API_KEY")
 
-# Caching requires specific versioned models (e.g., -001), not generic aliases
-MODEL_NAME = "models/gemini-1.5-flash-001" 
+# Primary Model for Caching (Using 2.0 Flash as it supports createCachedContent)
+CACHE_MODEL_NAME = "models/gemini-2.0-flash-001"
+
+# Fallback Model (Standard endpoint)
+STANDARD_MODEL_NAME = "models/gemini-2.5-flash-lite"
+
 BASE_URL = "https://generativelanguage.googleapis.com/v1beta"
 
 class GeminiCacheClient:
@@ -28,94 +34,105 @@ class GeminiCacheClient:
             with open(self.system_prompt_path, "r", encoding="utf-8") as f:
                 prompt_template = f.read()
             
-            # We use the FULL schema for caching, not just snippets
             with open(self.schema_path, "r", encoding="utf-8") as f:
                 schema_content = f.read()
 
-            # Merge
             return prompt_template.replace("{SCHEMA_CONTEXT}", schema_content)
         except FileNotFoundError as e:
-            print(f"CRITICAL ERROR: {e}")
+            print(f"CRITICAL FILE ERROR: {e}")
             return ""
 
     def _create_cache(self):
-        """Creates a new cache on Google servers and returns the resource name."""
+        """Attempts to create a cache. Returns True if successful, False otherwise."""
         url = f"{BASE_URL}/cachedContents?key={API_KEY}"
         
         payload = {
-            "model": MODEL_NAME,
+            "model": CACHE_MODEL_NAME,
             "displayName": "JLR_SupplyChain_Context",
             "systemInstruction": {
                 "parts": [{"text": self.full_system_instruction}]
             },
-            # Cache for 1 hour (3600s). You can increase this if needed.
             "ttl": "3600s"
         }
 
-        print("Creating new Gemini Context Cache...")
+        print("DEBUG: Attempting to create Gemini Context Cache...")
         try:
             resp = requests.post(url, json=payload, timeout=30)
-            resp.raise_for_status()
-            data = resp.json()
             
+            if resp.status_code != 200:
+                print(f"WARNING: Cache creation failed [{resp.status_code}].")
+                print(f"Server Response: {resp.text}") # <--- THIS WILL SHOW THE REAL ERROR
+                return False
+
+            data = resp.json()
             self.cache_name = data["name"]
-            # Set local expiry time (subtract 60s for safety buffer)
             self.cache_expiration = time.time() + 3600 - 60
-            print(f"Cache Active: {self.cache_name} (Expires in 1 hr)")
+            print(f"SUCCESS: Cache Active: {self.cache_name} (Expires in 1 hr)")
+            return True
             
         except requests.exceptions.RequestException as e:
-            print(f"Failed to create cache: {e}")
-            self.cache_name = None
+            print(f"WARNING: Network error creating cache: {e}")
+            return False
 
     def generate_sparql(self, question: str) -> str:
-        """Generates SPARQL using the active cache ID."""
+        """Generates SPARQL using Cache if available, otherwise falls back to standard."""
         if not API_KEY:
-            return "Error: LLM_API_KEY is missing."
+            return "Error: LLM_API_KEY is missing in app.env"
 
-        # 1. Check if cache exists and is valid
-        if not self.cache_name or time.time() > self.cache_expiration:
-            self._create_cache()
-            if not self.cache_name:
-                return "Error: Could not create context cache. Check logs."
+        # 1. Try to ensure cache exists
+        use_cache = False
+        if self.cache_name and time.time() < self.cache_expiration:
+            use_cache = True
+        else:
+            # Try to create it
+            if self._create_cache():
+                use_cache = True
+            else:
+                print("DEBUG: Proceeding with STANDARD (Non-Cached) request.")
 
-        # 2. Prepare Request
-        # Note: We do NOT send system_instruction here (it's in the cache)
-        url = f"{BASE_URL}/{MODEL_NAME}:generateContent?key={API_KEY}"
-        
-        user_prompt = f"Natural Language Question: {question}\nSPARQL Query:"
-        
-        payload = {
-            "contents": [
-                {"role": "user", "parts": [{"text": user_prompt}]}
-            ],
-            "cachedContent": self.cache_name
-        }
+        # 2. Prepare Request based on mode
+        if use_cache:
+            # CACHED MODE
+            # {BASE_URL} is https://generativelanguage.googleapis.com/v1beta
+            # CACHE_MODEL_NAME already has "models/" prefix
+            url = f"{BASE_URL}/{CACHE_MODEL_NAME}:generateContent?key={API_KEY}"
+            payload = {
+                "contents": [{"role": "user", "parts": [{"text": f"Natural Language Question: {question}\nSPARQL Query:"}]}],
+                "cachedContent": self.cache_name
+            }
+        else:
+            # FALLBACK / STANDARD MODE
+            # Use the variable directly because it now contains "models/"
+            url = f"{BASE_URL}/{STANDARD_MODEL_NAME}:generateContent?key={API_KEY}"
+            payload = {
+                "system_instruction": {"parts": [{"text": self.full_system_instruction}]},
+                "contents": [{"role": "user", "parts": [{"text": f"Natural Language Question: {question}\nSPARQL Query:"}]}]
+            }
 
         # 3. Execute
         try:
             resp = requests.post(url, json=payload, timeout=30)
             
-            # Handle 404 (Cache Not Found) - It might have been deleted remotely
-            if resp.status_code == 404:
-                print("Cache not found (404). Recreating...")
-                self._create_cache()
-                # Update payload with new cache name and retry once
-                payload["cachedContent"] = self.cache_name
-                resp = requests.post(url, json=payload, timeout=30)
+            # If Cache was used but not found (404), clear it and retry standard
+            if resp.status_code == 404 and use_cache:
+                print("DEBUG: Cache 404 (Expired/Deleted). Retrying with standard request...")
+                self.cache_name = None
+                return self.generate_sparql(question)
 
-            resp.raise_for_status()
+            if resp.status_code != 200:
+                return f"Gemini API Error {resp.status_code}: {resp.text}"
+
             data = resp.json()
-            
-            return data["candidates"][0]["content"]["parts"][0]["text"].strip()
+            try:
+                return data["candidates"][0]["content"]["parts"][0]["text"].strip()
+            except KeyError:
+                return f"Error parsing Gemini response: {data}"
             
         except Exception as e:
-            return f"Gemini API Error: {str(e)}"
+            return f"Gemini API Exception: {str(e)}"
 
 # Singleton Instance
-# We instantiate this once so the cache ID persists across Flask requests
 llm_client_instance = GeminiCacheClient()
 
 def generate_sparql_from_question(question: str, schema_context_unused: str = "") -> str:
-    """Wrapper function to maintain compatibility with app calls."""
-    # Note: schema_context_unused is ignored because we cached the FULL schema.
     return llm_client_instance.generate_sparql(question)
