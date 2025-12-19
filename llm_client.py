@@ -48,7 +48,7 @@ class GeminiCacheClient:
         
         payload = {
             "model": CACHE_MODEL_NAME,
-            "displayName": "JLR_SupplyChain_Context",
+            "displayName": "EDP4E",
             "systemInstruction": {
                 "parts": [{"text": self.full_system_instruction}]
             },
