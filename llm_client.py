@@ -11,7 +11,7 @@ load_dotenv("app.env")
 API_KEY = os.getenv("LLM_API_KEY")
 
 # Primary Model for Caching (Using 2.0 Flash as it supports createCachedContent)
-CACHE_MODEL_NAME = "models/gemini-2.0-flash-001"
+CACHE_MODEL_NAME = "models/gemini-2.0-flash-lite-preview-02-05"
 
 # Fallback Model (Standard endpoint)
 STANDARD_MODEL_NAME = "models/gemini-2.5-flash-lite"
@@ -61,7 +61,7 @@ class GeminiCacheClient:
             
             if resp.status_code != 200:
                 print(f"WARNING: Cache creation failed [{resp.status_code}].")
-                print(f"Server Response: {resp.text}") # <--- THIS WILL SHOW THE REAL ERROR
+                print(f"Server Response: {resp.text}")
                 return False
 
             data = resp.json()
